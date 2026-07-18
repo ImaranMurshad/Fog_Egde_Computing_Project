@@ -7,9 +7,8 @@ SENSOR_TOPIC = "themepark/sensors"
 FOG_TOPIC = "themepark/fog"
 
 # Django Backend
-DJANGO_API_URL = "http://127.0.0.1:8000/api/alerts/"
-
-DJANGO_FOG_API_URL = "http://127.0.0.1:8000/api/fog-health/"
+DJANGO_API_URL = "http://54.156.242.205/api/alerts/"
+DJANGO_FOG_API_URL = "http://54.156.242.205/api/fog-health/"
 
 # Sensor Thresholds
 MAX_SPEED = 100

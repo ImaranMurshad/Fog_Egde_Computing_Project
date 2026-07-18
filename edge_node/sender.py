@@ -1,6 +1,6 @@
 import requests
 
-API_URL = "http://127.0.0.1:8000/api/alerts/"
+API_URL = "http://54.156.242.205/api/alerts/"
 
 
 def send_alert(
