@@ -1,29 +1,27 @@
 from django.db import models
 
 
-# ----------------------------
+# =====================================================
 # Ride Model
-# ----------------------------
+# =====================================================
 
 class Ride(models.Model):
 
     STATUS_CHOICES = [
-        ('RUNNING', 'Running'),
-        ('STOPPED', 'Stopped'),
-        ('MAINTENANCE', 'Maintenance'),
-        ('EMERGENCY', 'Emergency'),
+        ("RUNNING", "Running"),
+        ("STOPPED", "Stopped"),
+        ("MAINTENANCE", "Maintenance"),
+        ("EMERGENCY", "Emergency"),
     ]
 
     name = models.CharField(max_length=100)
-
     location = models.CharField(max_length=100)
-
     description = models.TextField(blank=True)
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='RUNNING'
+        default="RUNNING"
     )
 
     installed_date = models.DateField()
@@ -34,18 +32,18 @@ class Ride(models.Model):
         return self.name
 
 
-# ----------------------------
+# =====================================================
 # Sensor Model
-# ----------------------------
+# =====================================================
 
 class Sensor(models.Model):
 
     SENSOR_TYPES = [
-        ('SPEED', 'Speed'),
-        ('TEMPERATURE', 'Temperature'),
-        ('VIBRATION', 'Vibration'),
-        ('PASSENGER', 'Passenger'),
-        ('BRAKE', 'Brake'),
+        ("SPEED", "Speed"),
+        ("TEMPERATURE", "Temperature"),
+        ("VIBRATION", "Vibration"),
+        ("PASSENGER", "Passenger"),
+        ("BRAKE", "Brake"),
     ]
 
     ride = models.ForeignKey(
@@ -71,9 +69,9 @@ class Sensor(models.Model):
         return self.sensor_name
 
 
-# ----------------------------
+# =====================================================
 # Sensor Reading
-# ----------------------------
+# =====================================================
 
 class SensorReading(models.Model):
 
@@ -91,9 +89,9 @@ class SensorReading(models.Model):
         return f"{self.sensor.sensor_name} - {self.value}"
 
 
-# ----------------------------
+# =====================================================
 # Fog Processed Data
-# ----------------------------
+# =====================================================
 
 class FogData(models.Model):
 
@@ -114,36 +112,71 @@ class FogData(models.Model):
         return f"{self.ride.name} - {self.risk_score}"
 
 
-# ----------------------------
-# Alert
-# ----------------------------
+# =====================================================
+# Alerts (Edge Node)
+# =====================================================
 
 class Alert(models.Model):
 
-    SEVERITY = [
-        ('LOW', 'Low'),
-        ('MEDIUM', 'Medium'),
-        ('HIGH', 'High'),
-        ('CRITICAL', 'Critical'),
+    STATUS_CHOICES = [
+        ("MEDIUM", "Medium"),
+        ("HIGH", "High"),
+        ("CRITICAL", "Critical"),
     ]
 
-    ride = models.ForeignKey(
-        Ride,
-        on_delete=models.CASCADE
-    )
+    ride_name = models.CharField(max_length=100)
 
-    title = models.CharField(max_length=200)
+    sensor_name = models.CharField(max_length=100)
 
-    description = models.TextField()
+    sensor_type = models.CharField(max_length=50)
 
-    severity = models.CharField(
+    value = models.CharField(max_length=50)
+
+    status = models.CharField(
         max_length=20,
-        choices=SEVERITY
+        choices=STATUS_CHOICES
     )
 
-    is_resolved = models.BooleanField(default=False)
+    message = models.TextField()
+
+    risk_score = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.title
+        return f"{self.ride_name} - {self.status}"
+
+
+# =====================================================
+# Fog Health (Fog Node)
+# =====================================================
+
+class FogHealth(models.Model):
+
+    STATUS_CHOICES = [
+        ("HEALTHY", "Healthy"),
+        ("WARNING", "Warning"),
+        ("CRITICAL", "Critical"),
+    ]
+
+    ride_name = models.CharField(max_length=100)
+
+    health_score = models.FloatField()
+
+    health_status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES
+    )
+
+    average_speed = models.FloatField(default=0)
+
+    average_temperature = models.FloatField(default=0)
+
+    average_vibration = models.FloatField(default=0)
+
+    average_passenger = models.FloatField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.ride_name} - {self.health_score}%"

@@ -1,0 +1,613 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+        <h2 class="fw-bold">📊 Reports Dashboard</h2>
+        <p class="text-muted">Theme Park Ride Monitoring Reports</p>
+    </div>
+
+</div>
+
+<!-- Date Filter -->
+<div class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 align-items-end">
+
+            <div class="col-md-4">
+                <label class="form-label">From Date</label>
+                <input
+                    type="date"
+                    name="from_date"
+                    class="form-control"
+                    value="{{ from_date }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">To Date</label>
+                <input
+                    type="date"
+                    name="to_date"
+                    class="form-control"
+                    value="{{ to_date }}">
+            </div>
+
+            <div class="col-md-4">
+
+                <button class="btn btn-primary">
+                    <i class="bi bi-funnel"></i>
+                    Filter
+                </button>
+
+                <a href="{% url 'reports' %}" class="btn btn-secondary">
+                    Reset
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+
+    <div class="col-md-3">
+        <div class="card dashboard-card total-card">
+            <div class="card-body">
+                <h6>Total Alerts</h6>
+                <h2>{{ total_alerts }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card dashboard-card critical-card">
+            <div class="card-body">
+                <h6>Critical</h6>
+                <h2>{{ critical_alerts }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card dashboard-card high-card">
+            <div class="card-body">
+                <h6>High</h6>
+                <h2>{{ high_alerts }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card dashboard-card medium-card">
+            <div class="card-body">
+                <h6>Medium</h6>
+                <h2>{{ medium_alerts }}</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Analytics Cards -->
+<div class="row g-4 mb-4">
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-primary text-white">
+            <div class="card-body">
+                <h6>Total Rides</h6>
+                <h2>{{ total_rides }}</h2>
+                <small>Monitored Rides</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-success text-white">
+            <div class="card-body">
+                <h6>Total Sensors</h6>
+                <h2>{{ total_sensors }}</h2>
+                <small>Active Sensors</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-danger text-white">
+            <div class="card-body">
+                <h6>Critical Today</h6>
+                <h2>{{ critical_today }}</h2>
+                <small>Today's Critical Alerts</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-warning text-dark">
+            <div class="card-body">
+                <h6>Most Affected Ride</h6>
+                <h5 class="fw-bold">{{ most_affected_ride }}</h5>
+                <small>Highest Alert Count</small>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Charts -->
+<div class="row mb-4">
+
+    <div class="col-lg-12 mb-4">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">📈 Alerts Trend</h5>
+            </div>
+
+            <div class="card-body">
+                <canvas id="trendChart" height="100"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">🥧 Severity Distribution</h5>
+            </div>
+
+            <div class="card-body">
+                <canvas id="severityChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">🎢 Alerts by Ride</h5>
+            </div>
+
+            <div class="card-body">
+                <canvas id="rideChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Analytics Section -->
+<div class="row mb-4">
+
+    <!-- Recent Critical Alerts -->
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">🚨 Recent Critical Alerts</h5>
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table table-hover mb-0">
+
+                    <thead>
+                        <tr>
+                            <th>Ride</th>
+                            <th>Sensor</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for alert in recent_critical %}
+
+                        <tr>
+                            <td>{{ alert.ride_name }}</td>
+                            <td>{{ alert.sensor_name }}</td>
+                            <td>{{ alert.created_at|date:"d M H:i" }}</td>
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+                            <td colspan="3" class="text-center">
+                                No Critical Alerts
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Sensor Statistics -->
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">📡 Top Sensor Statistics</h5>
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table table-hover mb-0">
+
+                    <thead>
+                        <tr>
+                            <th>Sensor</th>
+                            <th>Total Alerts</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for sensor in sensor_stats %}
+
+                        <tr>
+                            <td>{{ sensor.sensor_name }}</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ sensor.total }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+                            <td colspan="2" class="text-center">
+                                No Data Available
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">🏆 Top 5 Problematic Rides</h5>
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table table-hover mb-0">
+
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Ride</th>
+                    <th>Total Alerts</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for ride in top_rides %}
+
+                <tr>
+                    <td>#{{ forloop.counter }}</td>
+                    <td>{{ ride.ride_name }}</td>
+                    <td>
+                        <span class="badge bg-danger">
+                            {{ ride.total }}
+                        </span>
+                    </td>
+                </tr>
+
+            {% empty %}
+
+                <tr>
+                    <td colspan="3" class="text-center">
+                        No Data Available
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- Report Table -->
+<div class="card shadow-sm">
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+
+        <h5 class="mb-0">
+            📑 Alert Report
+        </h5>
+
+        <span class="badge bg-primary">
+            {{ total_alerts }} Records
+        </span>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table table-striped table-hover mb-0">
+
+            <thead class="table-dark">
+
+                <tr>
+                    <th>Ride</th>
+                    <th>Sensor</th>
+                    <th>Status</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for alert in alerts %}
+
+                <tr>
+
+                    <td>{{ alert.ride_name }}</td>
+
+                    <td>{{ alert.sensor_name }}</td>
+
+                    <td>
+
+                        {% if alert.status == "CRITICAL" %}
+                            <span class="badge bg-danger">{{ alert.status }}</span>
+
+                        {% elif alert.status == "HIGH" %}
+                            <span class="badge bg-warning text-dark">{{ alert.status }}</span>
+
+                        {% elif alert.status == "MEDIUM" %}
+                            <span class="badge bg-info text-dark">{{ alert.status }}</span>
+
+                        {% else %}
+                            <span class="badge bg-success">{{ alert.status }}</span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>{{ alert.message }}</td>
+
+                    <td>{{ alert.created_at|date:"d M Y H:i" }}</td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="5" class="text-center py-4">
+                        No Report Data Available
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+{% comment %} 
+<script>
+
+new Chart(document.getElementById("trendChart"), {
+
+    type: "line",
+
+    data: {
+
+        labels: {{ line_labels|safe }},
+
+        datasets: [{
+
+            label: "Alerts",
+
+            data: {{ line_data|safe }},
+
+            borderWidth: 3,
+
+            fill: false,
+
+            tension: 0.4
+
+        }]
+
+    }
+
+});
+
+
+new Chart(document.getElementById("severityChart"), {
+
+    type: "pie",
+
+    data: {
+
+        labels: {{ severity_labels|safe }},
+
+        datasets: [{
+
+            data: {{ severity_data|safe }}
+
+        }]
+
+    }
+
+});
+
+
+new Chart(document.getElementById("rideChart"), {
+
+    type: "bar",
+
+    data: {
+
+        labels: {{ ride_labels|safe }},
+
+        datasets: [{
+
+            label: "Alerts",
+
+            data: {{ ride_data|safe }}
+
+        }]
+
+    }
+
+});
+
+</script> {% endcomment %}
+
+{{ line_labels|json_script:"line-labels" }}
+{{ line_data|json_script:"line-data" }}
+
+{{ severity_labels|json_script:"severity-labels" }}
+{{ severity_data|json_script:"severity-data" }}
+
+{{ ride_labels|json_script:"ride-labels" }}
+{{ ride_data|json_script:"ride-data" }}
+
+<script>
+
+const lineLabels = JSON.parse(document.getElementById('line-labels').textContent);
+const lineData = JSON.parse(document.getElementById('line-data').textContent);
+
+const severityLabels = JSON.parse(document.getElementById('severity-labels').textContent);
+const severityData = JSON.parse(document.getElementById('severity-data').textContent);
+
+const rideLabels = JSON.parse(document.getElementById('ride-labels').textContent);
+const rideData = JSON.parse(document.getElementById('ride-data').textContent);
+
+
+// Alerts Trend
+new Chart(document.getElementById("trendChart"), {
+
+    type: "line",
+
+    data: {
+        labels: lineLabels,
+
+        datasets: [{
+            label: "Alerts",
+            data: lineData,
+            borderColor: "#0d6efd",
+            backgroundColor: "rgba(13,110,253,0.2)",
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true
+        }]
+    },
+
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+
+});
+
+
+// Severity Pie
+new Chart(document.getElementById("severityChart"), {
+
+    type: "pie",
+
+    data: {
+
+        labels: severityLabels,
+
+        datasets: [{
+
+            data: severityData,
+
+            backgroundColor: [
+                "#dc3545",
+                "#fd7e14",
+                "#20c997"
+            ]
+
+        }]
+
+    }
+
+});
+
+
+// Ride Chart
+new Chart(document.getElementById("rideChart"), {
+
+    type: "bar",
+
+    data: {
+
+        labels: rideLabels,
+
+        datasets: [{
+
+            label: "Alerts",
+
+            data: rideData,
+
+            backgroundColor: "#0d6efd"
+
+        }]
+
+    }
+
+});
+
+</script>
+
+{% endblock %}
