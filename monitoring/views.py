@@ -19,6 +19,13 @@ from .models import Alert, FogHealth
 from .serializers import AlertSerializer, FogHealthSerializer
 
 
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.response import Response
+
+from .tasks import save_alert_task, save_fog_health_task
+
+
 # =====================================================
 # REST API
 # =====================================================
@@ -27,10 +34,32 @@ class AlertCreateAPIView(generics.ListCreateAPIView):
     queryset = Alert.objects.all().order_by("-created_at")
     serializer_class = AlertSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        save_alert_task.delay(serializer.validated_data)
+
+        return Response(
+            {"message": "Alert queued successfully"},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
 
 class FogHealthCreateAPIView(generics.CreateAPIView):
     queryset = FogHealth.objects.all()
     serializer_class = FogHealthSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        save_fog_health_task.delay(serializer.validated_data)
+
+        return Response(
+            {"message": "Fog Health queued successfully"},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 # =====================================================
